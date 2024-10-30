@@ -1,9 +1,10 @@
 import numpy
 import random
 import torch
-from device import device
 
-class OmokGame:
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+class NexusGame:
     def __init__(self):
         self.board = torch.zeros(15, 15, dtype=torch.float, device=device, requires_grad=False)
         self.turn = 1
@@ -18,10 +19,11 @@ class OmokGame:
         return self.board
     
     def get_legal_moves(self):
-        rtr = torch.ones(15 * 15, dtype=torch.float, device=device, requires_grad=False)
-        for move in self.move_history:
-            rtr[move[0] * 15 + move[1]] = 0
-        return rtr
+        # rtr = torch.ones(15 * 15, dtype=torch.float, device=device, requires_grad=False)
+        # for move in self.move_history:
+        #     rtr[move[0] * 15 + move[1]] = 0
+        # return rtr
+        return (self.board == 0).float().view(-1).to(device)
     
     def get_turn(self):
         return self.turn
@@ -34,7 +36,11 @@ class OmokGame:
         self.turn = -self.turn
         return True
     
-    def checkWin(self):
+    def checkTerminal(self):
+        if len(self.move_history) >= 15 * 15:
+            return (True, 0)
+        if len(self.move_history) < 9:
+            return (False, 0)
         lastMove = self.move_history[-1]
         # Search fron last move
         def UtilitySqCheck(x, y):
@@ -44,10 +50,10 @@ class OmokGame:
         
         last_Player = self.board[lastMove[0], lastMove[1]]
 
-        dxl = [-1, 0, 1, -1, 1, -1, 0, 1]
-        dyl = [-1, -1, -1, 0, 0, 1, 1, 1]
+        dxl = [-1, 0, 1, -1]
+        dyl = [-1, -1, -1, 0]
 
-        for i in range(8):
+        for i in range(4):
             count = 1
             for j in range(1, 5):
                 if UtilitySqCheck(lastMove[0] + dxl[i] * j, lastMove[1] + dyl[i] * j) == last_Player:
@@ -61,13 +67,22 @@ class OmokGame:
                     break
         
             if count == 5:
-                return last_Player
-        return 0
+                # print("Player", last_Player, "wins!")
+                # print("Found at", lastMove)
+                return (True, last_Player)
+    
+        return (False, 0)
     
     def play(self, x, y):
         if not self.makeMove(x, y):
             return False
-        return self.checkWin()
+        return self.checkTerminal()
+    
+    def play_move(self, k):
+        x, y = divmod(k, 15)
+        if not self.makeMove(x, y):
+            return False
+        return self.checkTerminal()
     
     def __str__(self):
         ans = ""
@@ -83,18 +98,22 @@ class OmokGame:
         return ans
     
     def __repr__(self):
-        return "Project Nexus : Omok Game"
+        return "Project Nexus : Gomoku Game"
 
     def copy(self):
-        game = OmokGame()
+        game = NexusGame()
         game.board = self.board.clone()
         game.turn = self.turn
         game.move_history = self.move_history.copy()
         return game
 
+import random
 if __name__ == '__main__':
-    game = OmokGame()
+    game = NexusGame()
     while True:
-        x, y = map(int, input().split())
-        print(game.play(x, y))
+        random_move = random.choice(game.get_legal_moves().nonzero().view(-1).tolist())
+        rst = game.play(random_move // 15, random_move % 15)
         print(game)
+        if rst[0]:
+            print("Player", rst[1], "wins!")
+            break
