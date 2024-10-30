@@ -28,6 +28,8 @@ class Node:
 
         self.expanded = False
 
+        self.legal_list = None
+
     def select(self):
         if not self.expanded:
             return None
@@ -42,18 +44,37 @@ class Node:
         return self.children[best_child_idx]
 
     def expand(self, policy):
-        have_children = False
-        if self.legal_moves is None:
-            self.legal_moves = self.board.get_legal_moves()
-        for i in range(225):
-            if self.legal_moves[i] > 0.5: # Due to floating point error, just be safe
-                have_children = True
-                new_game = self.board.copy()
-                new_game.makeMove(i // 15, i % 15)
-                self.children[i] = Node(new_game, policy[i], i, self)
-                self.Psa[i] = policy[i]
-        self.expanded = have_children
+        # have_children = False
+        # if self.legal_moves is None:
+        #     self.legal_moves = self.board.get_legal_moves()
+        # for i in range(225):
+        #     if self.legal_moves[i] > 0.5: # Due to floating point error, just be safe
+        #         have_children = True
+        #         new_game = self.board.copy()
+        #         new_game.makeMove(i // 15, i % 15)
+        #         self.children[i] = Node(new_game, policy[i], i, self)
+        #         self.Psa[i] = policy[i]
+        # self.expanded = have_children
 
+        if self.legal_list is None:
+            if self.legal_moves is None:
+                self.legal_moves = self.board.get_legal_moves()
+            self.legal_list = torch.nonzero(self.legal_moves, as_tuple=False).squeeze(1)
+
+        if self.legal_list.numel() == 0:
+            self.expanded = False
+            return
+        
+        new_games = [self.board.copy() for _ in range(len(self.legal_list))]
+
+        for idx, move in enumerate(self.legal_list):
+            x, y = divmod(move.item(), 15)
+            new_games[idx].makeMove(x, y)
+            self.children[move] = Node(new_games[idx], policy[move], move, self)
+            self.Psa[move] = policy[move]
+        
+        self.expanded = True
+    
     def backpropagate(self, value):
         self.Total_visits += 1
         self.Total_value += value
