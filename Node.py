@@ -6,7 +6,7 @@ import math
 import config
 import Game
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device("cpu")
 
 class Node:
     def __init__(self, board, prior, action_t=None, parent=None):

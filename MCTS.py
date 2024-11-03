@@ -7,11 +7,13 @@ from Node import Node
 from Game import NexusGame
 import config
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device("cpu")
+NN_device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 class MCTS:
     def __init__(self, model):
         self.model = model
+        self.model.to(NN_device)
     
     @torch.inference_mode()
     def search(self, state : NexusGame):
@@ -27,8 +29,9 @@ class MCTS:
             value = -1 # If it's terminal, it's a loss, since the opponent played the last move
             
             if not isterminal:
-                actor, critic = self.model(node.board.get_board().unsqueeze(0))
-                actor = torch.softmax(actor, axis=1).squeeze(0).detach()
+                inp = node.board.get_board().unsqueeze(0).to(NN_device)
+                actor, critic = self.model(inp)
+                actor = torch.softmax(actor, axis=1).squeeze(0).detach().to(device)
                 critic = critic.item()
 
                 legal_moves = node.board.get_legal_moves()

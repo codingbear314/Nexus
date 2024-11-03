@@ -2,7 +2,7 @@ import numpy
 import random
 import torch
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device("cpu")
 
 class NexusGame:
     def __init__(self):
