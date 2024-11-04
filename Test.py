@@ -48,7 +48,7 @@ def main():
     processes = []
 
     # Multiprocessing for parallel MCTS
-    for i in range(config.MCTS_Workers):
+    for i in range(4):
         p = mp.Process(target=worker_func_worker, args=(i, model, gameList[i]))
         p.start()
         processes.append(p)
