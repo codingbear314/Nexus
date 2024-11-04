@@ -50,3 +50,29 @@ class MCTS:
                 rtr_probs[action] = child.Total_visits
         rtr_probs = rtr_probs / rtr_probs.sum()
         return rtr_probs
+
+
+# import torch.multiprocessing as mp 
+# class ParallelMCTS:
+#     def __init__(self, model):
+#         self.model = model
+#         self.model.to(NN_device)
+#         self.num_workers = config.MCTS_Workers
+
+    
+#     @torch.inference_mode()
+#     def search(self, state): # state is a list of NexusGame
+#         num_workers = len(state)
+
+#         def worker_func(worker_id, input_shared, output_shared, barrier):
+#             while True:
+#                 barrier.wait()
+#                 if input_shared[worker_id] is None:
+#                     break
+#                 state = input_shared[worker_id]
+#                 root = Node(state.copy(), 0, None, None)
+                
+#                 while root.expanded:
+#                     node = root.select()
+                
+                

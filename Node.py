@@ -41,6 +41,14 @@ class Node:
                           config.MCTS_C * self.Psa * sqrt_parent / (1 + self.Nsa)
 
         best_child_idx = torch.argmax(UpperConfidence).item()
+
+        # Lazy initialization
+        if self.children[best_child_idx] is None:
+            x, y = divmod(best_child_idx, 15)
+            new_game = self.board.copy()
+            new_game.makeMove(x, y)
+            self.children[best_child_idx] = Node(new_game, self.Psa[best_child_idx], best_child_idx, self)
+            self.children[best_child_idx].Total_visits = self.Nsa[best_child_idx]
         return self.children[best_child_idx]
 
     def expand(self, policy):
@@ -56,23 +64,32 @@ class Node:
         #         self.Psa[i] = policy[i]
         # self.expanded = have_children
 
+        # if self.legal_list is None:
+        #     if self.legal_moves is None:
+        #         self.legal_moves = self.board.get_legal_moves()
+        #     self.legal_list = torch.nonzero(self.legal_moves, as_tuple=False).squeeze(1)
+        # if self.legal_list.numel() == 0:
+        #     self.expanded = False
+        #     return
+        # new_games = [self.board.copy() for _ in range(len(self.legal_list))]
+        # for idx, move in enumerate(self.legal_list):
+        #     x, y = divmod(move.item(), 15)
+        #     new_games[idx].makeMove(x, y)
+        #     self.children[move] = Node(new_games[idx], policy[move], move, self)
+        #     self.Psa[move] = policy[move]
+        
+        # self.expanded = True
+
         if self.legal_list is None:
             if self.legal_moves is None:
                 self.legal_moves = self.board.get_legal_moves()
             self.legal_list = torch.nonzero(self.legal_moves, as_tuple=False).squeeze(1)
-
         if self.legal_list.numel() == 0:
             self.expanded = False
             return
         
-        new_games = [self.board.copy() for _ in range(len(self.legal_list))]
-
-        for idx, move in enumerate(self.legal_list):
-            x, y = divmod(move.item(), 15)
-            new_games[idx].makeMove(x, y)
-            self.children[move] = Node(new_games[idx], policy[move], move, self)
-            self.Psa[move] = policy[move]
-        
+        # Lazy initialization
+        self.Psa.index_copy_(0, self.legal_list, policy[self.legal_list])
         self.expanded = True
     
     def backpropagate(self, value):
