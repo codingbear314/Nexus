@@ -37,7 +37,7 @@ class NexusAgent:
                 # The player won
                 returnMemory = []
                 for stateHist, probsHist, playerHist in memory:
-                    outcome = 1 if playerHist == game.turn else -1
+                    outcome = -1 if playerHist == game.turn else 1
                     returnMemory.append((stateHist, probsHist, outcome))
                 return returnMemory
             
